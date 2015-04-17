@@ -49,6 +49,8 @@ typedef row {
 //Boards
 row board[ROWS];
 row buffer[ROWS];
+row prevOne[ROWS];
+row prevTwo[ROWS];
 
 //State variables
 bool cur_id = 0;
@@ -97,6 +99,39 @@ proctype BoardPrint() {
     od;
 };
 
+//Copy over the last two board states
+proctype StorePreviousStates() {
+  if
+  :: turn >= 1 ->
+    for(r : 0 .. ROWS - 1) {
+            for(c : 0 .. COLS - 1) {
+                prevTwo[r].col[c] = prevOne[r].col[c];
+            }
+     }
+     for(r : 0 .. ROWS - 1) {
+            for(c : 0 .. COLS - 1) {
+                prevOne[r].col[c] = buffer[r].col[c];
+            }
+     }
+  :: turn < 1 ->
+    for(r : 0 .. ROWS - 1) {
+            for(c : 0 .. COLS - 1) {
+                prevOne[r].col[c] = buffer[r].col[c];
+            }
+    }
+  fi
+}
+
+//Update the board for Oscillators
+proctype OscillatorSearch() {
+  bool same = 0
+  for(r : 0 .. ROWS - 1) {
+    for(c : 0 .. COLS - 1) {
+      same = (same && (prevTwo[r].col[c] == buffer[r].col[c]));
+    }
+  }
+}
+
 //Update the board
 proctype BoardTransition() {
     int r, c;
@@ -138,5 +173,7 @@ proctype BoardTransition() {
 init {
     run BoardInit();
     run BoardPrint();
+    run StorePreviousStates();
     run BoardTransition();
 }
+
