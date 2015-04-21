@@ -101,6 +101,9 @@ proctype BoardPrint() {
 
 //Copy over the last two board states
 proctype StorePreviousStates() {
+    int r, c;
+    int live;
+
   if
   :: turn >= 1 ->
     for(r : 0 .. ROWS - 1) {
