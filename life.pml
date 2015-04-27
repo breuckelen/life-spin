@@ -94,14 +94,6 @@ proctype BoardPrint() {
             printf("\n");
         }
 
-        printf("Current Buffer\n");
-        for(r : 0 .. ROWS - 1) {
-            for(c : 0 .. COLS - 1) {
-                get_live(live, r, c, buffer);
-                    printf(" %d (%d) ", buffer[r].col[c], live);
-	}
-            printf("\n");
-        }
 
         printf("Current Previous One\n");
         for(r : 0 .. ROWS - 1) {
@@ -134,7 +126,7 @@ proctype StorePreviousStates() {
     do
     :: cur_id == COPY_BOARD_ID && (turn > 0 && turn <= MAX_TURN) ->
         if
-        :: turn >= 1 ->
+        :: turn > 1 ->
         for(r : 0 .. ROWS - 1) {
             for(c : 0 .. COLS - 1) {
                 prevTwo[r].col[c] = prevOne[r].col[c];
@@ -142,13 +134,13 @@ proctype StorePreviousStates() {
         }
         for(r : 0 .. ROWS - 1) {
             for(c : 0 .. COLS - 1) {
-                prevOne[r].col[c] = buffer[r].col[c];
+                prevOne[r].col[c] = board[r].col[c];
             }
         }
-        :: turn < 1 ->
+        :: turn <= 1 ->
         for(r : 0 .. ROWS - 1) {
             for(c : 0 .. COLS - 1) {
-                prevOne[r].col[c] = buffer[r].col[c];
+                prevOne[r].col[c] = board[r].col[c];
             }
         }
         fi;
@@ -168,7 +160,8 @@ proctype OscillatorSearch() {
             }
         }
         assert(!same);
-	cur_id = PRINT_ID;
+        cur_id = PRINT_ID;
+        turn++;
     od;
 }
 
@@ -202,7 +195,6 @@ proctype BoardTransition() {
             }
         }
 
-        turn++;
         cur_id = OSCILLATOR_ID;
     :: turn > MAX_TURN ->
         break;
