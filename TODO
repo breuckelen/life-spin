@@ -1,2 +1,12 @@
-#Constrain board to have a certain number of squares
-#Deal with run time
+# How to find multiple assertion violations
+    * Save previous states in error and assert that the initial board is new
+    or use spins traces to look for something that is not that
+    * Start with initial states that we know end up in certain configurations,
+    assert that those configurations arise
+    * Figure out how to constrain squares on the board, come up with different
+    processes to constrain in different ways
+# Add
+    * d_steps to force spin to combine actions
+    * combine into 1-2 processes
+    * change buffer into a local variable
+    * depth of violations below 250
