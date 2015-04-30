@@ -1,6 +1,5 @@
-#define ROWS 4
-#define COLS 4
-#define BOARD_COUNT 5
+#define ROWS 7
+#define COLS 7
 #define MAX_TURN 4
 
 #define PRINT_STATE 0
@@ -14,20 +13,22 @@
 #define PREV_ONE_BOARD 2
 #define PREV_TWO_BOARD 3
 
+#define not_border(r, c) \
+    !((r == ROWS - 1 || c == COLS - 1 || r == 0 || c == 0) && buffer[r].col[c]);
+
 typedef row {
-    bool col[COLS + 1];
+    bool col[COLS];
 };
 
 int ro, col;
 
 //Boards
-row current[ROWS + 1];
-row buffer[ROWS + 1];
-row prevOne[ROWS + 1];
-row prevTwo[ROWS + 1];
+row current[ROWS];
+row buffer[ROWS];
+row prevOne[ROWS];
+row prevTwo[ROWS];
 
 inline get_live(r, c) {
-    //live = 0;
     d_step {
         ro = r;
         col = c;
@@ -36,28 +37,28 @@ inline get_live(r, c) {
         :: r == 0 && c == 0 ->
             live = current[r + 1].col[c] + current[r + 1].col[c + 1] \
                 + current[r].col[c + 1];
-        :: (r > 0 && r < ROWS) && c == 0 ->
+        :: (r > 0 && r < ROWS - 1) && c == 0 ->
             live = current[r - 1].col[c] + current[r + 1].col[c] \
                 + current[r + 1].col[c + 1] + current[r].col[c + 1] \
                 + current[r - 1].col[c + 1];
-        :: r == ROWS && c == 0 ->
+        :: r == ROWS - 1 && c == 0 ->
             live = current[r - 1].col[c] + current[r].col[c + 1] \
                 + current[r - 1].col[c + 1];
-        :: r == ROWS && (c > 0 && c < COLS) ->
+        :: r == ROWS - 1 && (c > 0 && c < COLS - 1) ->
             live = current[r - 1].col[c - 1] + current[r].col[c - 1] \
                 + current[r].col[c + 1] + current[r - 1].col[c + 1] \
                 + current[r - 1].col[c];
-        :: r == ROWS && c == COLS ->
+        :: r == ROWS - 1 && c == COLS - 1 ->
             live = current[r - 1].col[c - 1] + current[r].col[c - 1] \
                 + current[r - 1].col[c];
-        :: (r > 0 && r < ROWS) && c == COLS ->
+        :: (r > 0 && r < ROWS - 1) && c == COLS - 1 ->
             live = current[r - 1].col[c - 1] + current[r].col[c - 1] \
                 + current[r + 1].col[c - 1] + current[r + 1].col[c] \
                 + current[r - 1].col[c];
-        :: r == 0 && c == COLS ->
+        :: r == 0 && c == COLS - 1 ->
             live = current[r].col[c - 1] + current[r + 1].col[c - 1] \
                 + current[r + 1].col[c];
-        :: r == 0 && (c > 0 && c < COLS) ->
+        :: r == 0 && (c > 0 && c < COLS - 1) ->
             live = current[r].col[c - 1] + current[r + 1].col[c - 1] \
                 + current[r + 1].col[c] + current[r + 1].col[c + 1] \
                 + current[r].col[c + 1];
@@ -71,18 +72,47 @@ inline get_live(r, c) {
     }
 }
 
+inline write_board() {
+    d_step {
+        for(r : 0 .. ROWS - 1) {
+            for(c : 0 .. COLS - 1) {
+                get_live(r, c);
+                c_code {
+                    FILE *fp;
+                    fp = fopen("osc.txt", "a");
+                    fprintf(fp, "%d ", now.current[now.ro].col[now.col]);
+                    fclose(fp);
+                }
+            }
+            c_code {
+                FILE *fp;
+                fp = fopen("osc.txt", "a");
+                fprintf(fp, "\n");
+                fclose(fp);
+            }
+        }
+
+        c_code {
+            FILE *fp;
+            fp = fopen("osc.txt", "a");
+            fprintf(fp, "\n\n");
+            fclose(fp);
+        }
+    }
+}
+
 proctype BoardRun() {
     int turn = 0;
     int live;
-    int r, c, i;
+    int r, c;
     bool osc;
 
     do
     :: turn == 0 ->
         /*Board Init*/
 
-        for(r : 0 .. ROWS) {
-            for(c : 0 .. COLS) {
+        for(r : 0 .. ROWS - 1) {
+            for(c : 0 .. COLS - 1) {
                 if
                 :: current[r].col[c] = 0;
                     buffer[r].col[c] = 0;
@@ -98,8 +128,8 @@ proctype BoardRun() {
             /*Board Print*/
             printf("Current Board\n");
 
-            for(r : 0 .. ROWS) {
-                for(c : 0 .. COLS) {
+            for(r : 0 .. ROWS - 1) {
+                for(c : 0 .. COLS - 1) {
                     get_live(r, c);
                     printf(" %d (%d) ", current[r].col[c], live);
                 }
@@ -109,27 +139,27 @@ proctype BoardRun() {
             /*Board Store*/
             if
             :: turn > 1 ->
-                for(r : 0 .. ROWS) {
-                    for(c : 0 .. COLS) {
+                for(r : 0 .. ROWS - 1) {
+                    for(c : 0 .. COLS - 1) {
                         prevTwo[r].col[c] = prevOne[r].col[c];
                     }
                 }
-                for(r : 0 .. ROWS) {
-                    for(c : 0 .. COLS) {
+                for(r : 0 .. ROWS - 1) {
+                    for(c : 0 .. COLS - 1) {
                         prevOne[r].col[c] = buffer[r].col[c];
                     }
                 }
                 :: turn == 1 ->
-                for(r : 0 .. ROWS) {
-                    for(c : 0 .. COLS) {
+                for(r : 0 .. ROWS - 1) {
+                    for(c : 0 .. COLS - 1) {
                         prevOne[r].col[c] = buffer[r].col[c];
                     }
                 }
             fi;
 
             /*Board Transition*/
-            for(r : 0 .. ROWS) {
-                for(c : 0 .. COLS) {
+            for(r : 0 .. ROWS - 1) {
+                for(c : 0 .. COLS - 1) {
                     get_live(r, c);
                     if
                     :: live < 2 ->
@@ -145,51 +175,28 @@ proctype BoardRun() {
             }
 
             //Copy buffer into board
-            for(r : 0 .. ROWS) {
-                for(c : 0 .. COLS) {
+            for(r : 0 .. ROWS - 1) {
+                for(c : 0 .. COLS - 1) {
                     current[r].col[c] = buffer[r].col[c];
                 }
             }
 
             /*Board Search*/
-            // Include check for no squares with three live on the edges of the board
-            // Use get_live and increase the range for for loops
+            //TODO: Search for things that can only appear in those boards
             if
             :: turn > 1 ->
                 osc = 1;
 
-                for(r : 0 .. ROWS) {
-                    for(c : 0 .. COLS) {
-                        osc = (osc && (prevTwo[r].col[c] == buffer[r].col[c]));
+                for(r : 0 .. ROWS - 1) {
+                    for(c : 0 .. COLS - 1) {
+                        osc = osc && \
+                            prevTwo[r].col[c] == buffer[r].col[c] && \
+                            not_border(r, c);
                     }
                 }
 
                 if
-                :: osc ->
-                    for(r : 0 .. ROWS) {
-                        for(c : 0 .. COLS) {
-                            get_live(r, c);
-                            c_code {
-                                FILE *fp;
-                                fp = fopen("test.txt", "a");
-                                fprintf(fp, "%d ", now.current[now.ro].col[now.col]);
-                                fclose(fp);
-                            }
-                        }
-                        c_code {
-                            FILE *fp;
-                            fp = fopen("test.txt", "a");
-                            fprintf(fp, "\n");
-                            fclose(fp);
-                        }
-                    }
-
-                    c_code {
-                        FILE *fp;
-                        fp = fopen("test.txt", "a");
-                        fprintf(fp, "\n\n");
-                        fclose(fp);
-                    }
+                :: osc -> write_board();
                 :: else
                 fi;
 
