@@ -77,45 +77,119 @@ inline get_live(r, c) {
 
 inline write_board(fid) {
     d_step {
-        for(r : 0 .. ROWS - 1) {
-            for(c : 0 .. COLS - 1) {
-                get_live(r, c);
-                if
-                :: fid == 0 ->
-                    c_code {
-                        FILE *fp;
-                        fp = fopen("osc.txt", "a");
-                        fprintf(fp, "%d ", now.current[now.ro].col[now.col]);
-                        fclose(fp);
-                    }
-                :: fid == 1 ->
-                    c_code {
-                        FILE *fp;
-                        fp = fopen("still.txt", "a");
-                        fprintf(fp, "%d ", now.current[now.ro].col[now.col]);
-                        fclose(fp);
-                    }
-                :: else
-                fi;
-            }
-            if
-            :: fid == 0 ->
-                c_code {
-                    FILE *fp;
-                    fp = fopen("osc.txt", "a");
-                    fprintf(fp, "\n");
-                    fclose(fp);
-                }
-            :: fid == 1 ->
-                c_code {
-                    FILE *fp;
-                    fp = fopen("still.txt", "a");
-                    fprintf(fp, "\n");
-                    fclose(fp);
-                }
-            :: else
-            fi;
-        }
+	int p;
+	if
+	:: fid == 0 ->
+		c_code {
+			FILE *fp;
+			fp = fopen("osc.txt", "a");
+			fprintf(fp, "\nNext Instance Found:\n");
+			fclose(fp);
+		}
+	:: fid == 1 ->
+		c_code {
+			FILE *fp;
+			fp = fopen("still.txt", "a");
+			fprintf(fp, "\nNext Instance Found:\n");
+			fclose(fp);
+		}
+	:: else
+	fi;
+	for(p : 0 .. 2) {
+		if
+		:: fid == 0 ->
+			c_code {
+				FILE *fp;
+				fp = fopen("osc.txt", "a");
+				fprintf(fp, "\n\n");
+				fclose(fp);
+			}
+		:: fid == 1 ->
+			c_code {
+				FILE *fp;
+				fp = fopen("still.txt", "a");
+				fprintf(fp, "\n\n");
+				fclose(fp);
+			}
+		:: else
+		fi;
+		for(r : 0 .. ROWS - 1) {
+		    for(c : 0 .. COLS - 1) {
+			get_live(r, c);
+			if
+			:: fid == 0 ->
+			    if
+			    :: p == 0 ->
+			    	c_code {
+				    FILE *fp;
+				    fp = fopen("osc.txt", "a");
+				    fprintf(fp, "%d ", now.prevTwo[now.ro].col[now.col]);
+				    fclose(fp);
+			        }
+			    :: p == 1 ->
+				    c_code {
+					FILE *fp;
+					fp = fopen("osc.txt", "a");
+					fprintf(fp, "%d ", now.prevOne[now.ro].col[now.col]);
+					fclose(fp);
+				    }
+			    :: p == 2 ->
+				    c_code {
+					FILE *fp;
+					fp = fopen("osc.txt", "a");
+					fprintf(fp, "%d ", now.current[now.ro].col[now.col]);
+					fclose(fp);
+				    }
+			    :: else
+			    fi;
+
+			:: fid == 1 ->
+			    if
+			    :: p == 0 ->
+			    	c_code {
+				    FILE *fp;
+				    fp = fopen("still.txt", "a");
+				    fprintf(fp, "%d ", now.prevTwo[now.ro].col[now.col]);
+				    fclose(fp);
+			        }
+			    :: p == 1 ->
+				    c_code {
+					FILE *fp;
+					fp = fopen("still.txt", "a");
+					fprintf(fp, "%d ", now.prevOne[now.ro].col[now.col]);
+					fclose(fp);
+				    }
+			    :: p == 2 ->
+				    c_code {
+					FILE *fp;
+					fp = fopen("still.txt", "a");
+					fprintf(fp, "%d ", now.current[now.ro].col[now.col]);
+					fclose(fp);
+				    }
+			    :: else
+			    fi;
+			:: else
+			fi;
+		    }
+		    if
+		    :: fid == 0 ->
+			c_code {
+			    FILE *fp;
+			    fp = fopen("osc.txt", "a");
+			    fprintf(fp, "\n");
+			    fclose(fp);
+			}
+		    :: fid == 1 ->
+			c_code {
+			    FILE *fp;
+			    fp = fopen("still.txt", "a");
+			    fprintf(fp, "\n");
+			    fclose(fp);
+			}
+		    :: else
+		    fi;
+		}
+	}
 
         if
         :: fid == 0 ->
@@ -269,5 +343,6 @@ proctype BoardRun() {
 init {
     run BoardRun();
 }
+
 
 //ltl explosiveGrowth { <> live_count < prev_two_live_count || live_count < prev_live_count }
