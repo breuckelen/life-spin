@@ -21,6 +21,9 @@ typedef row {
 };
 
 int ro, col;
+int prev_live_count = 0;
+int prev_two_live_count = 0;
+int live_count = 0;
 
 //Boards
 row current[ROWS];
@@ -72,32 +75,65 @@ inline get_live(r, c) {
     }
 }
 
-inline write_board() {
+inline write_board(fid) {
     d_step {
         for(r : 0 .. ROWS - 1) {
             for(c : 0 .. COLS - 1) {
                 get_live(r, c);
+                if
+                :: fid == 0 ->
+                    c_code {
+                        FILE *fp;
+                        fp = fopen("osc.txt", "a");
+                        fprintf(fp, "%d ", now.current[now.ro].col[now.col]);
+                        fclose(fp);
+                    }
+                :: fid == 1 ->
+                    c_code {
+                        FILE *fp;
+                        fp = fopen("still.txt", "a");
+                        fprintf(fp, "%d ", now.current[now.ro].col[now.col]);
+                        fclose(fp);
+                    }
+                :: else
+                fi;
+            }
+            if
+            :: fid == 0 ->
                 c_code {
                     FILE *fp;
                     fp = fopen("osc.txt", "a");
-                    fprintf(fp, "%d ", now.current[now.ro].col[now.col]);
+                    fprintf(fp, "\n");
                     fclose(fp);
                 }
-            }
+            :: fid == 1 ->
+                c_code {
+                    FILE *fp;
+                    fp = fopen("still.txt", "a");
+                    fprintf(fp, "\n");
+                    fclose(fp);
+                }
+            :: else
+            fi;
+        }
+
+        if
+        :: fid == 0 ->
             c_code {
                 FILE *fp;
                 fp = fopen("osc.txt", "a");
-                fprintf(fp, "\n");
+                fprintf(fp, "\n\n");
                 fclose(fp);
             }
-        }
-
-        c_code {
-            FILE *fp;
-            fp = fopen("osc.txt", "a");
-            fprintf(fp, "\n\n");
-            fclose(fp);
-        }
+        :: fid == 1 ->
+            c_code {
+                FILE *fp;
+                fp = fopen("still.txt", "a");
+                fprintf(fp, "\n\n");
+                fclose(fp);
+            }
+        :: else
+        fi;
     }
 }
 
@@ -105,7 +141,7 @@ proctype BoardRun() {
     int turn = 0;
     int live;
     int r, c;
-    bool osc;
+    bool osc, st;
 
     do
     :: turn == 0 ->
@@ -142,17 +178,20 @@ proctype BoardRun() {
                 for(r : 0 .. ROWS - 1) {
                     for(c : 0 .. COLS - 1) {
                         prevTwo[r].col[c] = prevOne[r].col[c];
+                        prev_two_live_count = prev_two_live_count + prevOne[r].col[c];
                     }
                 }
                 for(r : 0 .. ROWS - 1) {
                     for(c : 0 .. COLS - 1) {
                         prevOne[r].col[c] = buffer[r].col[c];
+                        prev_live_count = prev_live_count + buffer[r].col[c];
                     }
                 }
-                :: turn == 1 ->
+            :: turn == 1 ->
                 for(r : 0 .. ROWS - 1) {
                     for(c : 0 .. COLS - 1) {
                         prevOne[r].col[c] = buffer[r].col[c];
+                        prev_live_count = prev_live_count + buffer[r].col[c];
                     }
                 }
             fi;
@@ -174,19 +213,35 @@ proctype BoardRun() {
                 }
             }
 
-            //Copy buffer into board
             for(r : 0 .. ROWS - 1) {
                 for(c : 0 .. COLS - 1) {
                     current[r].col[c] = buffer[r].col[c];
+                    live_count = live_count + buffer[r].col[c];
                 }
             }
 
             /*Board Search*/
-            //TODO: Search for things that can only appear in those boards
             if
             :: turn > 1 ->
-                osc = 1;
+                st = 1;
+                for (r : 0 .. ROWS - 1) {
+                    for(c : 0 .. COLS - 1) {
+                        st = st && \
+                            prevOne[r].col[c] == buffer[r].col[c] && \
+                            not_border(r, c);
+                    }
+                }
 
+                st = st && live_count > 0;
+
+                if
+                :: st -> write_board(1);
+                :: else
+                fi;
+
+                assert(!st);
+
+                osc = 1;
                 for(r : 0 .. ROWS - 1) {
                     for(c : 0 .. COLS - 1) {
                         osc = osc && \
@@ -196,7 +251,7 @@ proctype BoardRun() {
                 }
 
                 if
-                :: osc -> write_board();
+                :: osc -> write_board(0);
                 :: else
                 fi;
 
@@ -215,3 +270,4 @@ init {
     run BoardRun();
 }
 
+//ltl explosiveGrowth { <> live_count < prev_two_live_count || live_count < prev_live_count }
