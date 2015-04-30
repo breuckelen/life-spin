@@ -216,7 +216,6 @@ proctype BoardRun() {
     int live;
     int r, c;
     bool osc, st;
-
     do
     :: turn == 0 ->
         /*Board Init*/
@@ -235,6 +234,9 @@ proctype BoardRun() {
         turn++;
     :: turn > 0 && turn <= MAX_TURN ->
         d_step {
+	    prev_two_live_count = 0;
+	    prev_live_count = 0;
+	    live_count = 0;
             /*Board Print*/
             printf("Current Board\n");
 
@@ -344,5 +346,5 @@ init {
     run BoardRun();
 }
 
-
+//ltl explosiveGrowth { eventually true }
 //ltl explosiveGrowth { <> live_count < prev_two_live_count || live_count < prev_live_count }
