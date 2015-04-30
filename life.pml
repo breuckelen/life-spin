@@ -1,11 +1,12 @@
 #define ROWS 7
 #define COLS 7
 #define MAX_TURN 4
+#define DEATH_START 5
 
 #define STILL_LIFE 0
 #define OSCILLATOR 1
 #define DEATH 2
-#define SEARCH OSCILLATOR
+#define SEARCH DEATH
 
 #define not_border(r, c) \
     !((r == ROWS - 1 || c == COLS - 1 || r == 0 || c == 0) && buffer[r].col[c]);
@@ -295,6 +296,15 @@ proctype BoardRun() {
 
                     assert(!osc);
                 #elif SEARCH == DEATH
+		    if
+		    :: init_live_count > DEATH_START ->
+			if
+                    	:: (live_count == 0) -> write_board();
+                    	:: else
+                    	fi;
+			assert((live_count > 0));
+		    :: else
+		    fi;
                 #endif
             :: else
             fi;
