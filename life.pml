@@ -2,25 +2,21 @@
 #define COLS 7
 #define MAX_TURN 4
 
-#define PRINT_STATE 0
-#define TRANS_STATE 1
-#define SEARCH_STATE 2
-#define OSCILLATOR_STATE 3
-#define COPY_STATE 4
-
-#define CURRENT_BOARD 0
-#define BUFFER_BOARD 1
-#define PREV_ONE_BOARD 2
-#define PREV_TWO_BOARD 3
+#define STILL_LIFE 0
+#define OSCILLATOR 1
+#define DEATH 2
+#define SEARCH OSCILLATOR
 
 #define not_border(r, c) \
     !((r == ROWS - 1 || c == COLS - 1 || r == 0 || c == 0) && buffer[r].col[c]);
+
 
 typedef row {
     bool col[COLS];
 };
 
 int ro, col;
+int init_live_count = 0;
 int prev_live_count = 0;
 int prev_two_live_count = 0;
 int live_count = 0;
@@ -75,139 +71,104 @@ inline get_live(r, c) {
     }
 }
 
-inline write_board(fid) {
+inline write_board() {
     d_step {
 	int p;
-	if
-	:: fid == 0 ->
-		c_code {
-			FILE *fp;
-			fp = fopen("osc.txt", "a");
-			fprintf(fp, "\nNext Instance Found:\n");
-			fclose(fp);
-		}
-	:: fid == 1 ->
-		c_code {
-			FILE *fp;
-			fp = fopen("still.txt", "a");
-			fprintf(fp, "\nNext Instance Found:\n");
-			fclose(fp);
-		}
-	:: else
-	fi;
+        c_code {
+                FILE *fp;
+                #if SEARCH == STILL_LIFE
+                    fp = fopen("still.txt", "a");
+                #elif SEARCH == OSCILLATOR
+                    fp = fopen("osc.txt", "a");
+                #elif SEARCH == DEATH
+                    fp = fopen("death.txt", "a");
+                #endif
+                fprintf(fp, "\nNext Instance Found:\n");
+                fclose(fp);
+        }
 	for(p : 0 .. 2) {
-		if
-		:: fid == 0 ->
-			c_code {
-				FILE *fp;
-				fp = fopen("osc.txt", "a");
-				fprintf(fp, "\n\n");
-				fclose(fp);
-			}
-		:: fid == 1 ->
-			c_code {
-				FILE *fp;
-				fp = fopen("still.txt", "a");
-				fprintf(fp, "\n\n");
-				fclose(fp);
-			}
-		:: else
-		fi;
-		for(r : 0 .. ROWS - 1) {
-		    for(c : 0 .. COLS - 1) {
-			get_live(r, c);
-			if
-			:: fid == 0 ->
-			    if
-			    :: p == 0 ->
-			    	c_code {
-				    FILE *fp;
-				    fp = fopen("osc.txt", "a");
-				    fprintf(fp, "%d ", now.prevTwo[now.ro].col[now.col]);
-				    fclose(fp);
-			        }
-			    :: p == 1 ->
-				    c_code {
-					FILE *fp;
-					fp = fopen("osc.txt", "a");
-					fprintf(fp, "%d ", now.prevOne[now.ro].col[now.col]);
-					fclose(fp);
-				    }
-			    :: p == 2 ->
-				    c_code {
-					FILE *fp;
-					fp = fopen("osc.txt", "a");
-					fprintf(fp, "%d ", now.current[now.ro].col[now.col]);
-					fclose(fp);
-				    }
-			    :: else
-			    fi;
+            c_code {
+                    FILE *fp;
+                    #if SEARCH == STILL_LIFE
+                        fp = fopen("still.txt", "a");
+                    #elif SEARCH == OSCILLATOR
+                        fp = fopen("osc.txt", "a");
+                    #elif SEARCH == DEATH
+                        fp = fopen("death.txt", "a");
+                    #endif
+                    fprintf(fp, "\n\n");
+                    fclose(fp);
+            }
 
-			:: fid == 1 ->
-			    if
-			    :: p == 0 ->
-			    	c_code {
-				    FILE *fp;
-				    fp = fopen("still.txt", "a");
-				    fprintf(fp, "%d ", now.prevTwo[now.ro].col[now.col]);
-				    fclose(fp);
-			        }
-			    :: p == 1 ->
-				    c_code {
-					FILE *fp;
-					fp = fopen("still.txt", "a");
-					fprintf(fp, "%d ", now.prevOne[now.ro].col[now.col]);
-					fclose(fp);
-				    }
-			    :: p == 2 ->
-				    c_code {
-					FILE *fp;
-					fp = fopen("still.txt", "a");
-					fprintf(fp, "%d ", now.current[now.ro].col[now.col]);
-					fclose(fp);
-				    }
-			    :: else
-			    fi;
-			:: else
-			fi;
-		    }
-		    if
-		    :: fid == 0 ->
-			c_code {
-			    FILE *fp;
-			    fp = fopen("osc.txt", "a");
-			    fprintf(fp, "\n");
-			    fclose(fp);
-			}
-		    :: fid == 1 ->
-			c_code {
-			    FILE *fp;
-			    fp = fopen("still.txt", "a");
-			    fprintf(fp, "\n");
-			    fclose(fp);
-			}
-		    :: else
-		    fi;
-		}
+            for(r : 0 .. ROWS - 1) {
+                for(c : 0 .. COLS - 1) {
+                    get_live(r, c);
+
+                    if
+                    :: p == 0 ->
+                        c_code {
+                            FILE *fp;
+                            #if SEARCH == STILL_LIFE
+                                fp = fopen("still.txt", "a");
+                            #elif SEARCH == OSCILLATOR
+                                fp = fopen("osc.txt", "a");
+                            #elif SEARCH == DEATH
+                                fp = fopen("death.txt", "a");
+                            #endif
+                            fprintf(fp, "%d ", now.prevTwo[now.ro].col[now.col]);
+                            fclose(fp);
+                        }
+                    :: p == 1 ->
+                            c_code {
+                                FILE *fp;
+                                #if SEARCH == STILL_LIFE
+                                    fp = fopen("still.txt", "a");
+                                #elif SEARCH == OSCILLATOR
+                                    fp = fopen("osc.txt", "a");
+                                #elif SEARCH == DEATH
+                                    fp = fopen("death.txt", "a");
+                                #endif
+                                fprintf(fp, "%d ", now.prevOne[now.ro].col[now.col]);
+                                fclose(fp);
+                            }
+                    :: p == 2 ->
+                            c_code {
+                                FILE *fp;
+                                #if SEARCH == STILL_LIFE
+                                    fp = fopen("still.txt", "a");
+                                #elif SEARCH == OSCILLATOR
+                                    fp = fopen("osc.txt", "a");
+                                #elif SEARCH == DEATH
+                                    fp = fopen("death.txt", "a");
+                                #endif
+                                fprintf(fp, "%d ", now.current[now.ro].col[now.col]);
+                                fclose(fp);
+                            }
+                    :: else
+                    fi;
+                }
+
+                c_code {
+                    FILE *fp;
+                    #if SEARCH == STILL_LIFE
+                        fp = fopen("still.txt", "a");
+                    #elif SEARCH == OSCILLATOR
+                        fp = fopen("osc.txt", "a");
+                    #elif SEARCH == DEATH
+                        fp = fopen("death.txt", "a");
+                    #endif
+                    fprintf(fp, "\n");
+                    fclose(fp);
+                }
+            }
 	}
 
-        if
-        :: fid == 0 ->
-            c_code {
-                FILE *fp;
-                fp = fopen("osc.txt", "a");
-                fprintf(fp, "\n\n");
-                fclose(fp);
-            }
-        :: fid == 1 ->
-            c_code {
-                FILE *fp;
-                fp = fopen("still.txt", "a");
-                fprintf(fp, "\n\n");
-                fclose(fp);
-            }
-        :: else
-        fi;
+        c_code {
+            FILE *fp;
+            fp = fopen("osc.txt", "a");
+            fprintf(fp, "\n\n");
+            fclose(fp);
+        }
     }
 }
 
@@ -219,7 +180,6 @@ proctype BoardRun() {
     do
     :: turn == 0 ->
         /*Board Init*/
-
         for(r : 0 .. ROWS - 1) {
             for(c : 0 .. COLS - 1) {
                 if
@@ -227,6 +187,7 @@ proctype BoardRun() {
                     buffer[r].col[c] = 0;
                 :: current[r].col[c] = 1;
                     buffer[r].col[c] = 1;
+                    init_live_count++;
                 fi;
             }
         }
@@ -299,39 +260,42 @@ proctype BoardRun() {
             /*Board Search*/
             if
             :: turn > 1 ->
-                st = 1;
-                for (r : 0 .. ROWS - 1) {
-                    for(c : 0 .. COLS - 1) {
-                        st = st && \
-                            prevOne[r].col[c] == buffer[r].col[c] && \
-                            not_border(r, c);
+                #if SEARCH == STILL_LIFE
+                    st = 1;
+                    for (r : 0 .. ROWS - 1) {
+                        for(c : 0 .. COLS - 1) {
+                            st = st && \
+                                prevOne[r].col[c] == buffer[r].col[c] && \
+                                not_border(r, c);
+                        }
                     }
-                }
 
-                st = st && live_count > 0;
+                    st = st && live_count > 0;
 
-                if
-                :: st -> write_board(1);
-                :: else
-                fi;
+                    if
+                    :: st -> write_board();
+                    :: else
+                    fi;
 
-                assert(!st);
-
-                osc = 1;
-                for(r : 0 .. ROWS - 1) {
-                    for(c : 0 .. COLS - 1) {
-                        osc = osc && \
-                            prevTwo[r].col[c] == buffer[r].col[c] && \
-                            not_border(r, c);
+                    assert(!st);
+                #elif SEARCH == OSCILLATOR
+                    osc = 1;
+                    for(r : 0 .. ROWS - 1) {
+                        for(c : 0 .. COLS - 1) {
+                            osc = osc && \
+                                prevTwo[r].col[c] == buffer[r].col[c] && \
+                                not_border(r, c);
+                        }
                     }
-                }
 
-                if
-                :: osc -> write_board(0);
-                :: else
-                fi;
+                    if
+                    :: osc -> write_board();
+                    :: else
+                    fi;
 
-                assert(!osc);
+                    assert(!osc);
+                #elif SEARCH == DEATH
+                #endif
             :: else
             fi;
 
