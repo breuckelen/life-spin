@@ -8,7 +8,8 @@
 #define OSCILLATOR 1
 #define DEATH 2
 #define LIFE 3
-#define SEARCH DEATH
+#define INTERESTING 4
+#define SEARCH INTERESTING
 
 #define not_border(r, c) \
     !((r == ROWS - 1 || c == COLS - 1 || r == 0 || c == 0) && buffer[r].col[c]);
@@ -87,6 +88,8 @@ inline write_board() {
                     fp = fopen("death.txt", "a");
 		#elif SEARCH == LIFE
 		    fp = fopen("life.txt", "a");
+		#elif SEARCH == INTERESTING
+		    fp = fopen("interesting.txt", "a");
                 #endif
                 fprintf(fp, "\nNext Instance Found:\n");
                 fclose(fp);
@@ -102,6 +105,8 @@ inline write_board() {
                         fp = fopen("death.txt", "a");
 		    #elif SEARCH == LIFE
 		    	fp = fopen("life.txt", "a");
+		    #elif SEARCH == INTERESTING
+		    	fp = fopen("interesting.txt", "a");
                     #endif
                     fprintf(fp, "\n\n");
                     fclose(fp);
@@ -123,6 +128,8 @@ inline write_board() {
                                 fp = fopen("death.txt", "a");
                             #elif SEARCH == LIFE
 		    		fp = fopen("life.txt", "a");
+			    #elif SEARCH == INTERESTING
+		    		fp = fopen("interesting.txt", "a");
 			    #endif
                             fprintf(fp, "%d ", now.prevTwo[now.ro].col[now.col]);
                             fclose(fp);
@@ -138,6 +145,8 @@ inline write_board() {
                                     fp = fopen("death.txt", "a");
                                 #elif SEARCH == LIFE
 				    fp = fopen("life.txt", "a");
+				#elif SEARCH == INTERESTING
+		    		    fp = fopen("interesting.txt", "a");
 				#endif
                                 fprintf(fp, "%d ", now.prevOne[now.ro].col[now.col]);
                                 fclose(fp);
@@ -153,6 +162,8 @@ inline write_board() {
                                     fp = fopen("death.txt", "a");
                                 #elif SEARCH == LIFE
 		    		    fp = fopen("life.txt", "a");
+				#elif SEARCH == INTERESTING
+		    		    fp = fopen("interesting.txt", "a");
 				#endif
                                 fprintf(fp, "%d ", now.current[now.ro].col[now.col]);
                                 fclose(fp);
@@ -171,6 +182,8 @@ inline write_board() {
                         fp = fopen("death.txt", "a");
                     #elif SEARCH == LIFE
 		        fp = fopen("life.txt", "a");
+		    #elif SEARCH == INTERESTING
+		    	fp = fopen("interesting.txt", "a");
 		    #endif
                     fprintf(fp, "\n");
                     fclose(fp);
@@ -322,6 +335,19 @@ proctype BoardRun() {
 		        assert((live_count < BOARD_SIZE));
 		    :: else
 		    fi;
+		#elif SEARCH == INTERESTING
+		    if
+		    :: ((live_count > (BOARD_SIZE/4)) && (prev_live_count > (BOARD_SIZE/4)) && (prev_two_live_count > (BOARD_SIZE/4))) ->
+			bool checkInterest = true;
+			if
+			:: ((live_count != prev_live_count) && (live_count != prev_two_live_count)) ->
+			    checkInterest = false;
+			    write_board();
+			:: else
+			fi;
+			assert(checkInterest);
+		    :: else
+		    fi;
                 #endif
             :: else
             fi;
@@ -337,5 +363,5 @@ init {
     run BoardRun();
 }
 
-//ltl explosiveGrowth { eventually true }
+//ltl explosiveGrowth { true }
 //ltl explosiveGrowth { <> live_count < prev_two_live_count || live_count < prev_live_count }
