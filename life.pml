@@ -1,8 +1,8 @@
 #define ROWS 7
 #define COLS 7
-#define MAX_TURN 4
 #define BOARD_SIZE (ROWS * COLS)
-#define INIT_LIVES 5
+#define MAX_TURN 4
+#define MIN_LIVES 5
 
 #define STILL_LIFE 0
 #define OSCILLATOR 1
@@ -197,7 +197,8 @@ proctype BoardRun() {
     int turn = 0;
     int live;
     int r, c;
-    bool osc, st;
+    bool osc, st, de, li, ci;
+
     do
     :: turn == 0 ->
         /*Board Init*/
@@ -283,6 +284,7 @@ proctype BoardRun() {
             :: turn > 1 ->
                 #if SEARCH == STILL_LIFE
                     st = 1;
+
                     for (r : 0 .. ROWS - 1) {
                         for(c : 0 .. COLS - 1) {
                             st = st && \
@@ -301,6 +303,7 @@ proctype BoardRun() {
                     assert(!st);
                 #elif SEARCH == OSCILLATOR
                     osc = 1;
+
                     for(r : 0 .. ROWS - 1) {
                         for(c : 0 .. COLS - 1) {
                             osc = osc && \
@@ -316,38 +319,36 @@ proctype BoardRun() {
 
                     assert(!osc);
                 #elif SEARCH == DEATH
-		    if
-		    :: init_live_count == INIT_LIVES ->
-			if
-                    	:: (live_count == 0) -> write_board();
-                    	:: else
-                    	fi;
-			assert((live_count > 0));
-		    :: else
-		    fi;
+                    de = init_live_count >= MIN_LIVES && live_count == 0;
+
+                    if
+                    :: de -> write_board();
+                    :: else
+                    fi;
+
+                    assert(!de);
 		#elif SEARCH == LIFE
-		    if
-		    :: init_live_count == INIT_LIVES ->
-		        if
-                        :: (live_count == BOARD_SIZE) -> write_board();
-                        :: else
-                        fi;
-		        assert((live_count < BOARD_SIZE));
-		    :: else
-		    fi;
+                    li = init_live_count >= MIN_LIVES && live_count == BOARD_SIZE;
+
+                    if
+                    :: li -> write_board();
+                    :: else
+                    fi;
+
+                    assert(!li);
 		#elif SEARCH == INTERESTING
-		    if
-		    :: ((live_count > (BOARD_SIZE/4)) && (prev_live_count > (BOARD_SIZE/4)) && (prev_two_live_count > (BOARD_SIZE/4))) ->
-			bool checkInterest = true;
-			if
-			:: ((live_count != prev_live_count) && (live_count != prev_two_live_count)) ->
-			    checkInterest = false;
-			    write_board();
-			:: else
-			fi;
-			assert(checkInterest);
-		    :: else
-		    fi;
+                    ci = (live_count > (BOARD_SIZE / 4)) && \
+                        (prev_live_count > (BOARD_SIZE / 4)) && \
+                        (prev_two_live_count > (BOARD_SIZE / 4)) && \
+                        ((live_count != prev_live_count) && \
+                        (live_count != prev_two_live_count));
+
+                    if
+                    ::  ci -> write_board();
+                    :: else
+                    fi;
+
+                    assert(!ci);
                 #endif
             :: else
             fi;
