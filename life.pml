@@ -1,5 +1,5 @@
-#define ROWS 7
-#define COLS 7
+#define ROWS 5
+#define COLS 5
 #define BOARD_SIZE (ROWS * COLS)
 #define MAX_TURN 4
 #define MIN_LIVES 5
@@ -9,7 +9,8 @@
 #define DEATH 2
 #define LIFE 3
 #define INTERESTING 4
-#define SEARCH INTERESTING
+#define LTL 5
+#define SEARCH LTL
 
 #define not_border(r, c) \
     !((r == ROWS - 1 || c == COLS - 1 || r == 0 || c == 0) && buffer[r].col[c]);
@@ -30,6 +31,21 @@ row current[ROWS];
 row buffer[ROWS];
 row prevOne[ROWS];
 row prevTwo[ROWS];
+
+//NOTE: ltl hard to formulate, can't finish search
+
+//TODO: search for specific configurations -- there will not be a board that
+// maps to this configuration
+
+//TODO: verification of oscillators and still lifes -- if you start with this
+// configuration, you will not get itself the next time, or get itself two times after
+
+//TODO: generating communitiies -- there will not be a board that remains the
+// same as the last, and adds other squares
+
+//TODO: moving communities -- there will not be a board that has the same number
+// of squares the next time as it did the last, all squares within a bounded
+// region the first turn, all squares within a bounded region the second turn
 
 inline get_live(r, c) {
     d_step {
@@ -217,9 +233,11 @@ proctype BoardRun() {
         turn++;
     :: turn > 0 && turn <= MAX_TURN ->
         d_step {
+            /*Reset variables*/
 	    prev_two_live_count = 0;
 	    prev_live_count = 0;
 	    live_count = 0;
+
             /*Board Print*/
             printf("Current Board\n");
 
@@ -338,10 +356,8 @@ proctype BoardRun() {
                     assert(!li);
 		#elif SEARCH == INTERESTING
                     ci = (live_count > (BOARD_SIZE / 4)) && \
-                        (prev_live_count > (BOARD_SIZE / 4)) && \
-                        (prev_two_live_count > (BOARD_SIZE / 4)) && \
-                        ((live_count != prev_live_count) && \
-                        (live_count != prev_two_live_count));
+                        (prev_live_count > live_count) && \
+                        (prev_two_live_count > prev_two_live_count);
 
                     if
                     ::  ci -> write_board();
@@ -364,5 +380,4 @@ init {
     run BoardRun();
 }
 
-//ltl explosiveGrowth { true }
-//ltl explosiveGrowth { <> live_count < prev_two_live_count || live_count < prev_live_count }
+//ltl explosiveGrowth {always !(live_count == BOARD_SIZE)}
