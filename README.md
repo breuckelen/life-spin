@@ -1,3 +1,8 @@
+##IMPORTANT
+
+* Our code does not run on department linux machines, likely due to different versions of spin. You may have to update your version of spin to run the project.
+
+
 ## What we set out to model
 * We set out to verify various properties about configurations in Conway's game of life.
 
