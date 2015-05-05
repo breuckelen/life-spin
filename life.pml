@@ -1,17 +1,19 @@
-#define ROWS 8
-#define COLS 8
-#define BOARD_SIZE (ROWS * COLS)
-#define MAX_TURN 4
-#define MIN_LIVES 5
-
+#define NONE -1
 #define STILL_LIFE 0
 #define OSCILLATOR 1
 #define DEATH 2
 #define LIFE 3
 #define INTERESTING 4
-#define LTL 5
-#define SPACESHIP 6
+#define SPACESHIP 5
 #define SEARCH SPACESHIP
+#define VERIFY NONE
+
+#define ROWS 8
+#define COLS 8
+
+#define BOARD_SIZE (ROWS * COLS)
+#define MAX_TURN 4
+#define MIN_LIVES 5
 
 #define not_border(r, c) \
     !((r == ROWS - 1 || c == COLS - 1 || r == 0 || c == 0) && buffer[r].col[c]);
@@ -34,12 +36,12 @@ row prevOne[ROWS];
 row prevTwo[ROWS];
 
 //NOTE: ltl hard to formulate, can't finish search
+//NOTE: we couldn't think of a way to model an infinite number of squares practically,
+// so death states aren't necessarily accurate
+//NOTE: spaceship search finds spaceships based on loose parameters
 
 //TODO: search for specific configurations -- there will not be a board that
 // maps to this configuration
-
-//TODO: verification of oscillators and still lifes -- if you start with this
-// configuration, you will not get itself the next time, or get itself two times after
 
 //TODO: generating communitiies -- there will not be a board that remains the
 // same as the last, and adds other squares
@@ -222,6 +224,58 @@ inline write_board() {
     }
 }
 
+inline set_still_life() {
+    d_step {
+        for(r : 0 .. ROWS - 1) {
+            for(c : 0 .. COLS - 1) {
+                current[r].col[c] = 0;
+                buffer[r].col[c] = 0;
+            }
+        }
+
+        //NOTE: could implement functionality for reading from files
+        current[1].col[1] = 1;
+        buffer[1].col[1] = 1;
+        current[1].col[2] = 1;
+        buffer[1].col[2] = 1;
+        current[2].col[1] = 1;
+        buffer[2].col[1] = 1;
+        current[2].col[3] = 1;
+        buffer[2].col[3] = 1;
+        current[3].col[2] = 1;
+        buffer[3].col[2] = 1;
+
+        init_live_count = 5;
+    }
+}
+
+inline set_osc() {
+    d_step {
+        for(r : 0 .. ROWS - 1) {
+            for(c : 0 .. COLS - 1) {
+                current[r].col[c] = 0;
+                buffer[r].col[c] = 0;
+            }
+        }
+
+        //NOTE: could implement functionality for reading from files
+        current[2].col[2] = 1;
+        buffer[2].col[2] = 1;
+        current[2].col[3] = 1;
+        buffer[2].col[3] = 1;
+        current[2].col[4] = 1;
+        buffer[2].col[4] = 1;
+        current[3].col[1] = 1;
+        buffer[3].col[1] = 1;
+        current[3].col[2] = 1;
+        buffer[3].col[2] = 1;
+        current[3].col[3] = 1;
+        buffer[3].col[3] = 1;
+
+        init_live_count = 6;
+    }
+}
+
 proctype BoardRun() {
     int turn = 0;
     int live;
@@ -231,17 +285,23 @@ proctype BoardRun() {
     do
     :: turn == 0 ->
         /*Board Init*/
-        for(r : 0 .. ROWS - 1) {
-            for(c : 0 .. COLS - 1) {
-                if
-                :: current[r].col[c] = 0;
-                    buffer[r].col[c] = 0;
-                :: current[r].col[c] = 1;
-                    buffer[r].col[c] = 1;
-                    init_live_count++;
-                fi;
+        #if VERIFY == STILL_LIFE
+            set_still_life();
+        #elif VERIFY == OSCILLATOR
+            set_osc();
+        #else
+            for(r : 0 .. ROWS - 1) {
+                for(c : 0 .. COLS - 1) {
+                    if
+                    :: current[r].col[c] = 0;
+                        buffer[r].col[c] = 0;
+                    :: current[r].col[c] = 1;
+                        buffer[r].col[c] = 1;
+                        init_live_count++;
+                    fi;
+                }
             }
-        }
+        #endif
 
         turn++;
     :: turn > 0 && turn <= MAX_TURN ->
@@ -342,6 +402,8 @@ proctype BoardRun() {
                                 not_border(r, c);
                         }
                     }
+
+                    osc = osc && live_count > 0;
 
                     if
                     :: osc -> write_board();
