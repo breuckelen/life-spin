@@ -1,5 +1,5 @@
-#define ROWS 5
-#define COLS 5
+#define ROWS 8
+#define COLS 8
 #define BOARD_SIZE (ROWS * COLS)
 #define MAX_TURN 4
 #define MIN_LIVES 5
@@ -10,7 +10,8 @@
 #define LIFE 3
 #define INTERESTING 4
 #define LTL 5
-#define SEARCH LTL
+#define SPACESHIP 6
+#define SEARCH SPACESHIP
 
 #define not_border(r, c) \
     !((r == ROWS - 1 || c == COLS - 1 || r == 0 || c == 0) && buffer[r].col[c]);
@@ -106,7 +107,9 @@ inline write_board() {
 		    fp = fopen("life.txt", "a");
 		#elif SEARCH == INTERESTING
 		    fp = fopen("interesting.txt", "a");
-                #endif
+                #elif SEARCH == SPACESHIP
+		    fp = fopen("spaceship.txt", "a");
+		#endif
                 fprintf(fp, "\nNext Instance Found:\n");
                 fclose(fp);
         }
@@ -123,7 +126,9 @@ inline write_board() {
 		    	fp = fopen("life.txt", "a");
 		    #elif SEARCH == INTERESTING
 		    	fp = fopen("interesting.txt", "a");
-                    #endif
+                    #elif SEARCH == SPACESHIP
+		    	fp = fopen("spaceship.txt", "a");
+		    #endif
                     fprintf(fp, "\n\n");
                     fclose(fp);
             }
@@ -146,6 +151,8 @@ inline write_board() {
 		    		fp = fopen("life.txt", "a");
 			    #elif SEARCH == INTERESTING
 		    		fp = fopen("interesting.txt", "a");
+			    #elif SEARCH == SPACESHIP
+		    		fp = fopen("spaceship.txt", "a");
 			    #endif
                             fprintf(fp, "%d ", now.prevTwo[now.ro].col[now.col]);
                             fclose(fp);
@@ -163,6 +170,8 @@ inline write_board() {
 				    fp = fopen("life.txt", "a");
 				#elif SEARCH == INTERESTING
 		    		    fp = fopen("interesting.txt", "a");
+				#elif SEARCH == SPACESHIP
+		    		    fp = fopen("spaceship.txt", "a");
 				#endif
                                 fprintf(fp, "%d ", now.prevOne[now.ro].col[now.col]);
                                 fclose(fp);
@@ -180,6 +189,8 @@ inline write_board() {
 		    		    fp = fopen("life.txt", "a");
 				#elif SEARCH == INTERESTING
 		    		    fp = fopen("interesting.txt", "a");
+				#elif SEARCH == SPACESHIP
+		    		    fp = fopen("spaceship.txt", "a");
 				#endif
                                 fprintf(fp, "%d ", now.current[now.ro].col[now.col]);
                                 fclose(fp);
@@ -200,6 +211,8 @@ inline write_board() {
 		        fp = fopen("life.txt", "a");
 		    #elif SEARCH == INTERESTING
 		    	fp = fopen("interesting.txt", "a");
+		    #elif SEARCH == SPACESHIP
+		        fp = fopen("spaceship.txt", "a");
 		    #endif
                     fprintf(fp, "\n");
                     fclose(fp);
@@ -213,7 +226,7 @@ proctype BoardRun() {
     int turn = 0;
     int live;
     int r, c;
-    bool osc, st, de, li, ci;
+    bool osc, st, de, li, ci, space, border;
 
     do
     :: turn == 0 ->
@@ -365,6 +378,37 @@ proctype BoardRun() {
                     fi;
 
                     assert(!ci);
+		#elif SEARCH == SPACESHIP
+		    osc = 1;
+
+                    for(r : 0 .. ROWS - 1) {
+                        for(c : 0 .. COLS - 1) {
+                            osc = osc && \
+                                prevTwo[r].col[c] == buffer[r].col[c] && \
+                                not_border(r, c);
+                        }
+                    }
+		    st = 1;
+
+                    for (r : 0 .. ROWS - 1) {
+                        for(c : 0 .. COLS - 1) {
+                            st = st && \
+                                prevOne[r].col[c] == buffer[r].col[c] && \
+                                not_border(r, c);
+                        }
+                    }
+		    border = 1;
+		    for (r : 0 .. ROWS - 1) {
+			for (c : 0 .. COLS - 1) {
+			    border = border && not_border(r,c);
+			}
+		    }	    
+		    space = !st && border && !osc && (live_count == prev_live_count) && (live_count == prev_two_live_count);
+		    if
+                    :: space -> write_board();
+                    :: else
+                    fi;
+		    assert(!space);
                 #endif
             :: else
             fi;
