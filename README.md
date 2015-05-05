@@ -31,7 +31,7 @@
 
 * The unbounded growth property was difficult to formulate as an ltl property.
 		
-* We left the commented out property in our code. However, instead of using an ltl property we chose to simply search for fully alive states, and when finding none, we can reason that there was no unbounded growth.
+* We left the commented out property in our code. However, instead of using an ltl property we chose to simply search for fully alive states, and when finding none, we can reason that there was no unbounded growth for a limited search space.
 
 * We chose not to write a spaceship verifier as the parameters for what it means to be a spaceship are very loose, and so a verifier might incorrectly verify. Therefore, we found that it was much more useful to search for spaceship instances and then reason whether or not the instance fiven is actually a spaceship.
 
