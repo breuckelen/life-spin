@@ -6,7 +6,7 @@
 ## What we set out to model
 * We set out to verify various properties Conway's game of life, and search for interesting configurations within the game.
 
-* This includes verification that certain starting states will result in
+* This includes verification and search for start states that will result in
 	1. Empty boards (death states)
 	2. Boards that do not change (still lifes)
 	3. Boards that repeat every other turn (oscillators)
