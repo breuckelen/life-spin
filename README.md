@@ -34,7 +34,7 @@
 		
 * This forces our configurations to exist inside the outermost cells on our board.
 
-* t was hard to define what "unbounded growth" meant, and hard to formulate our arbitrary definition as an ltl property in spin.
+* It was hard to define what "unbounded growth" meant, and hard to formulate our arbitrary definition as an ltl property in spin.
 		
 * We left the commented out property in our code. However, instead of using an ltl property we chose to simply search for fully alive states, and when finding none, we can reason that there was no unbounded growth for a limited search space.
 
