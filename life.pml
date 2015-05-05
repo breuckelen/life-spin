@@ -317,10 +317,10 @@ inline set_desired() {
         }
 
         desired[1].col[1] = 1;
-        desired[2].col[1] = 1;
-        desired[3].col[1] = 1;
+        desired[1].col[2] = 1;
+        desired[1].col[3] = 1;
+        desired[2].col[2] = 1;
         desired[3].col[2] = 1;
-        desired[3].col[3] = 1;
     }
 }
 
