@@ -5,15 +5,22 @@
 #define LIFE 3
 #define INTERESTING 4
 #define SPACESHIP 5
-#define SEARCH SPACESHIP
-#define VERIFY NONE
+#define DESIRED 6
+#define SEARCH DESIRED
+#define VERIFY DESIRED
 
-#define ROWS 8
-#define COLS 8
+#define ROWS 5
+#define COLS 5
 
 #define BOARD_SIZE (ROWS * COLS)
 #define MAX_TURN 4
-#define MIN_LIVES 5
+
+#if VERIFY == DEATH
+    #define MIN_LIVES 0
+#else
+    #define MIN_LIVES 5
+#endif
+
 
 #define not_border(r, c) \
     !((r == ROWS - 1 || c == COLS - 1 || r == 0 || c == 0) && buffer[r].col[c]);
@@ -34,14 +41,12 @@ row current[ROWS];
 row buffer[ROWS];
 row prevOne[ROWS];
 row prevTwo[ROWS];
+row desired[ROWS];
 
 //NOTE: ltl hard to formulate, can't finish search
 //NOTE: we couldn't think of a way to model an infinite number of squares practically,
 // so death states aren't necessarily accurate
 //NOTE: spaceship search finds spaceships based on loose parameters
-
-//TODO: search for specific configurations -- there will not be a board that
-// maps to this configuration
 
 //TODO: generating communitiies -- there will not be a board that remains the
 // same as the last, and adds other squares
@@ -111,6 +116,8 @@ inline write_board() {
 		    fp = fopen("interesting.txt", "a");
                 #elif SEARCH == SPACESHIP
 		    fp = fopen("spaceship.txt", "a");
+                #elif SEARCH == DESIRED
+		    fp = fopen("desired.txt", "a");
 		#endif
                 fprintf(fp, "\nNext Instance Found:\n");
                 fclose(fp);
@@ -130,6 +137,8 @@ inline write_board() {
 		    	fp = fopen("interesting.txt", "a");
                     #elif SEARCH == SPACESHIP
 		    	fp = fopen("spaceship.txt", "a");
+                    #elif SEARCH == DESIRED
+                        fp = fopen("desired.txt", "a");
 		    #endif
                     fprintf(fp, "\n\n");
                     fclose(fp);
@@ -155,6 +164,8 @@ inline write_board() {
 		    		fp = fopen("interesting.txt", "a");
 			    #elif SEARCH == SPACESHIP
 		    		fp = fopen("spaceship.txt", "a");
+                            #elif SEARCH == DESIRED
+                                fp = fopen("desired.txt", "a");
 			    #endif
                             fprintf(fp, "%d ", now.prevTwo[now.ro].col[now.col]);
                             fclose(fp);
@@ -174,6 +185,8 @@ inline write_board() {
 		    		    fp = fopen("interesting.txt", "a");
 				#elif SEARCH == SPACESHIP
 		    		    fp = fopen("spaceship.txt", "a");
+                                #elif SEARCH == DESIRED
+                                    fp = fopen("desired.txt", "a");
 				#endif
                                 fprintf(fp, "%d ", now.prevOne[now.ro].col[now.col]);
                                 fclose(fp);
@@ -193,6 +206,8 @@ inline write_board() {
 		    		    fp = fopen("interesting.txt", "a");
 				#elif SEARCH == SPACESHIP
 		    		    fp = fopen("spaceship.txt", "a");
+                                #elif SEARCH == DESIRED
+                                    fp = fopen("desired.txt", "a");
 				#endif
                                 fprintf(fp, "%d ", now.current[now.ro].col[now.col]);
                                 fclose(fp);
@@ -215,6 +230,8 @@ inline write_board() {
 		    	fp = fopen("interesting.txt", "a");
 		    #elif SEARCH == SPACESHIP
 		        fp = fopen("spaceship.txt", "a");
+                    #elif SEARCH == DESIRED
+                        fp = fopen("desired.txt", "a");
 		    #endif
                     fprintf(fp, "\n");
                     fclose(fp);
@@ -258,7 +275,6 @@ inline set_osc() {
             }
         }
 
-        //NOTE: could implement functionality for reading from files
         current[2].col[2] = 1;
         buffer[2].col[2] = 1;
         current[2].col[3] = 1;
@@ -276,19 +292,57 @@ inline set_osc() {
     }
 }
 
+inline set_death() {
+    d_step {
+        for(r : 0 .. ROWS - 1) {
+            for(c : 0 .. COLS - 1) {
+                current[r].col[c] = 0;
+                buffer[r].col[c] = 0;
+            }
+        }
+
+        current[2].col[2] = 1;
+        buffer[2].col[2] = 1;
+
+        init_live_count = 1;
+    }
+}
+
+inline set_desired() {
+    d_step {
+        for(r : 0 .. ROWS - 1) {
+            for(c : 0 .. COLS - 1) {
+                desired[r].col[c] = 0;
+            }
+        }
+
+        desired[1].col[1] = 1;
+        desired[2].col[1] = 1;
+        desired[3].col[1] = 1;
+        desired[3].col[2] = 1;
+        desired[3].col[3] = 1;
+    }
+}
+
 proctype BoardRun() {
     int turn = 0;
     int live;
     int r, c;
-    bool osc, st, de, li, ci, space, border;
+    bool osc, st, de, li, ci, ds, space, border;
 
     do
     :: turn == 0 ->
         /*Board Init*/
+        #if VERIFY == DESIRED
+            set_desired();
+        #endif
+
         #if VERIFY == STILL_LIFE
             set_still_life();
         #elif VERIFY == OSCILLATOR
             set_osc();
+        #elif VERIFY == DEATH
+            set_death();
         #else
             for(r : 0 .. ROWS - 1) {
                 for(c : 0 .. COLS - 1) {
@@ -450,6 +504,7 @@ proctype BoardRun() {
                                 not_border(r, c);
                         }
                     }
+
 		    st = 1;
 
                     for (r : 0 .. ROWS - 1) {
@@ -459,18 +514,47 @@ proctype BoardRun() {
                                 not_border(r, c);
                         }
                     }
+
 		    border = 1;
+
 		    for (r : 0 .. ROWS - 1) {
 			for (c : 0 .. COLS - 1) {
 			    border = border && not_border(r,c);
 			}
-		    }	    
-		    space = !st && border && !osc && (live_count == prev_live_count) && (live_count == prev_two_live_count);
+		    }
+
+		    space = !st && border && !osc && \
+                        (live_count == prev_live_count) && \
+                        (live_count == prev_two_live_count);
+
 		    if
                     :: space -> write_board();
                     :: else
                     fi;
+
 		    assert(!space);
+		#elif SEARCH == DESIRED
+                    ds = 1;
+
+                    for (r : 0 .. ROWS - 1) {
+                        for(c : 0 .. COLS - 1) {
+                            ds = ds && buffer[r].col[c] == desired[r].col[c];
+                        }
+                    }
+
+		    if
+                    :: ds ->
+                        for (r : 0 .. ROWS - 1) {
+                            for(c : 0 .. COLS - 1) {
+                                buffer[r].col[c] = prevOne[r].col[c];
+                            }
+                        }
+
+                        write_board();
+                    :: else
+                    fi;
+
+		    assert(!ds);
                 #endif
             :: else
             fi;
