@@ -4,37 +4,37 @@
 
 
 ## What we set out to model
-* We set out to verify various properties about configurations in Conway's game of life.
+* We set out to verify various properties Conway's game of life, and search for interesting configurations within the game.
 
-* This includes verification that certain starting states will result in death states, still life states, oscillating states, and spaceship states.
+* This includes verification that certain starting states will result in
+	1. Empty boards (death states)
+	2. Boards that do not change (still lifes)
+	3. Boards that repeat every other turn (oscillators)
+	4. Boards that have groups of live squares that move across the board (space ship states)
 
-* This includes searching for still lifes, oscillators, spaceships, and death states.
-
-* Lastly this includes the safety property that there is no unbounded growth, and the liveness properties that encompass the rules of transitioning from one board state to another.
+* This also includes a safety property that there is no unbounded growth, and other liveness properties related to finding interesting board configurations.
 
 
 ##What we have modeled
 
-* Currently, we are able to transition correctly from one board state to the next.
+* A game that follows the rules of Conway's game of life (with an important modification)
 
-* We are able to verify the unbounded growth property by searching for fully alive states (and finding none).
+* Partial verification for the unbounded growth property by searching for fully alive states (and finding none).
 
-* We are able to search for arbitrary oscillators, death states, still life, and spaceships.
+* Search for oscillators, death states, still life, and spaceships.
 
-* We are able to verify hardcoded given starting states as either still lifes or oscillators.
+* Verification that given starting states are either still lifes, oscillators, or death states.
 
 
 ##Modeling decisions we had to make
 
-* We chose to model the board as an exact sized board (generally between 5x5 -> 8x8).
+* The most important decision, that affected the rules of the game was that we chose to model the board as an exact sized board (generally between 5x5 -> 8x8). Although Conway's Game of Life exists on an infinite sized board, it did not seem practical, or necessarily simple, to try to search for specific configurations on an infinite sized board in Spin.
 
-* Although Conway's Game of Life exists on an infinite sized board, it did not seem practical to try to search for specific configurations on an infinite sized board in Spin.
-
-* As the bord is limited, we treat border states as if cells outside them do not exist (or are all permanently dead cells), so that only cells inside the border cells are considered  as able to be live or dead.
+* As the bord is limited, we treat border states as if cells outside them do not exist (or are all permanently dead cells), so that only cells inside the border cells are considered as able to be live or dead.
 		
 * This forces our configurations to exist inside the outermost cells on our board.
 
-* The unbounded growth property was difficult to formulate as an ltl property.
+* t was hard to define what "unbounded growth" meant, and hard to formulate our arbitrary definition as an ltl property in spin.
 		
 * We left the commented out property in our code. However, instead of using an ltl property we chose to simply search for fully alive states, and when finding none, we can reason that there was no unbounded growth for a limited search space.
 
@@ -58,6 +58,8 @@
 
 		gcc -DSAFETY -o pan pan.c
 
-		./pan -i	
+		./pan -i (for searches)
+		OR
+		./pan -E (for verifications)
 
   
